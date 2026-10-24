@@ -1,0 +1,140 @@
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 2rem;
+  color: #172554;
+}
+
+h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 1.25rem;
+  color: #1e293b;
+}
+
+main > p {
+  margin-bottom: 32px;
+  color: #64748b;
+}
+
+section {
+  margin-bottom: 28px;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #334155;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+input,
+select,
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+  font-weight: 400;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid #93c5fd;
+  border-color: #2563eb;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  align-self: end;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 7px;
+  background: #2563eb;
+  color: white;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: #1d4ed8;
+}
+
+article {
+  margin-top: 14px;
+  padding: 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+article h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #1e40af;
+  font-size: 1.05rem;
+}
+
+article p {
+  margin: 7px 0;
+  color: #475569;
+  font-size: 0.92rem;
+}
+
+[role="status"] {
+  margin-top: 16px;
+  color: #166534;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 650px) {
+  main {
+    padding: 24px 14px;
+  }
+
+  section {
+    padding: 20px;
+  }
+
+  form {
+    grid-template-columns: 1fr;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+  }
+}

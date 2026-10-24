@@ -4,6 +4,8 @@ from app.database.database import Base, engine
 from app.models.application import Application
 from app.routes.applications import router as applications_router
 
+from fastapi.middleware.cors import CORSMiddleware
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -11,6 +13,16 @@ app = FastAPI(
     description="Job application tracking and analytics API",
     version="0.1.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5177"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(applications_router)
 
 app.include_router(applications_router)
 

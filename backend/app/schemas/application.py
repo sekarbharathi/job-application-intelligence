@@ -1,6 +1,15 @@
 from datetime import date, datetime
 
+from enum import Enum
+
 from pydantic import BaseModel, ConfigDict
+
+class ApplicationStatus(str, Enum):
+    APPLIED = "Applied"
+    INTERVIEW = "Interview"
+    REJECTED = "Rejected"
+    OFFER = "Offer"
+    WITHDRAWN = "Withdrawn"
 
 
 class ApplicationCreate(BaseModel):
@@ -12,7 +21,7 @@ class ApplicationCreate(BaseModel):
     source: str | None = None
 
     application_date: date
-    status: str = "Applied"
+    status: ApplicationStatus = ApplicationStatus.APPLIED
 
     resume_version: str | None = None
     job_description: str | None = None
