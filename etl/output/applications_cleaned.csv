@@ -1,0 +1,4 @@
+id,company,job_title,job_url,location,source,application_date,status,resume_version,job_description,notes,created_at,updated_at,application_month,application_year,reached_interview
+4,iceye,AI,,Oulu,,2026-10-24,Applied,,,,2026-10-24 21:16:18.682800,2026-10-24 21:16:18.682806,2026-10,2026,0
+5,iceye,SDGD,,,,2026-10-24,Applied,,,,2026-10-24 21:16:44.149919,2026-10-24 21:16:44.149925,2026-10,2026,0
+1,Wolt,Software Engineer,https://example.com/job,Helsinki,LinkedIn,2026-09-23,Rejected,CV-2026-09,Software engineering role involving backend development and AI-enabled applications.,Invited to first interview,2026-09-23 17:05:37.915490,2026-10-24 21:10:24.662473,2026-09,2026,0

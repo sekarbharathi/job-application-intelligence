@@ -21,6 +21,24 @@ function App() {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+
+  const filteredApplications = applications.filter((application) => {
+    const matchesSearch =
+      application.company
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      application.job_title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+    const matchesStatus =
+      statusFilter === "All" || application.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
+  });
 
   async function fetchApplications() {
     try {
@@ -86,9 +104,111 @@ function App() {
     }
   }
 
+
+  async function handleStatusChange(applicationId, newStatus) {
+    try {
+      const application = applications.find(
+        (item) => item.id === applicationId
+      );
+
+      if (!application) return;
+
+      const response = await fetch(`${API_URL}${applicationId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...application,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not update application status.");
+      }
+
+      setMessage("Application status updated.");
+      await fetchApplications();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+
+  async function handleDelete(applicationId) {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this application?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch(`${API_URL}${applicationId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Could not delete the application.");
+      }
+
+      setMessage("Application deleted successfully.");
+      await fetchApplications();
+    } catch (error) {
+      setMessage(error.message);
+    }
+  }
+
+
+  const totalApplications = applications.length;
+
+  const appliedCount = applications.filter(
+    (application) => application.status === "Applied"
+  ).length;
+
+  const interviewCount = applications.filter(
+    (application) => application.status === "Interview"
+  ).length;
+
+  const offerCount = applications.filter(
+    (application) => application.status === "Offer"
+  ).length;
+
+  const rejectCount = applications.filter(
+    (application) => application.status === "Rejected"
+  ).length;
+  
   return (
     <main>
       <h1>Job Application Intelligence</h1>
+
+    <div className="dashboard-cards">
+      <div className="dashboard-card">
+        <p>Total applications</p>
+        <h2>{totalApplications}</h2>
+      </div>
+
+      <div className="dashboard-card">
+        <p>Applied</p>
+        <h2>{appliedCount}</h2>
+      </div>
+
+
+      <div className="dashboard-card">
+        <p>Interviews</p>
+        <h2>{interviewCount}</h2>
+      </div>
+
+      <div className="dashboard-card">
+        <p>Offers</p>
+        <h2>{offerCount}</h2>
+      </div>
+
+      <div className="dashboard-card">
+        <p>Rejected</p>
+        <h2>{rejectCount}</h2>
+      </div>
+    </div>
       <p>Track your job applications in one place.</p>
 
       <section>
@@ -206,24 +326,66 @@ function App() {
       </section>
 
       <section>
-        <h2>Applications ({applications.length})</h2>
+        
+      <h2>Applications ({filteredApplications.length})</h2>
+
+      <div className="application-filters">
+        <input
+          type="text"
+          placeholder="Search by company or job title..."
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+        />
+
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+        >
+          <option value="All">All statuses</option>
+          <option value="Applied">Applied</option>
+          <option value="Interview">Interview</option>
+          <option value="Rejected">Rejected</option>
+          <option value="Offer">Offer</option>
+          <option value="Withdrawn">Withdrawn</option>
+        </select>
+      </div>
 
         {loading ? (
           <p>Loading applications...</p>
-        ) : applications.length === 0 ? (
+        ) : filteredApplications.length === 0 ? (
           <p>No applications yet. Add your first application above.</p>
         ) : (
-          applications.map((application) => (
+          filteredApplications.map((application) => (
             <article key={application.id}>
               <h3>
                 {application.job_title} — {application.company}
               </h3>
-              <p>Status: {application.status}</p>
+              
+              <label>
+                Status
+                <select
+                  value={application.status}
+                  onChange={(event) =>
+                    handleStatusChange(application.id, event.target.value)
+                  }
+                >
+                  <option value="Applied">Applied</option>
+                  <option value="Interview">Interview</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Offer">Offer</option>
+                  <option value="Withdrawn">Withdrawn</option>
+                </select>
+              </label>
               <p>Applied: {application.application_date}</p>
               {application.location && (
                 <p>Location: {application.location}</p>
               )}
-              {application.source && <p>Source: {application.source}</p>}
+              <button
+                type="button"
+                onClick={() => handleDelete(application.id)}
+              >
+                Delete application
+              </button>
             </article>
           ))
         )}
