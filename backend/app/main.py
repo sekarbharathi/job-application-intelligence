@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from app.database.database import Base, engine
 from app.models.application import Application
 from app.routes.applications import router as applications_router
+from app.routes.documents import router as documents_router
+from app.models.document import Document
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,7 +26,7 @@ app.add_middleware(
 
 app.include_router(applications_router)
 
-app.include_router(applications_router)
+app.include_router(documents_router)
 
 
 @app.get("/")
