@@ -45,8 +45,9 @@ def normalize_text(text: str) -> str:
     return text.strip()
 
 
+
 def check_quotes(data, cv_text: str):
-    """Check whether supplied quotes appear in the extracted CV."""
+    """Validate quotes and check whether descriptions are supported by them."""
     normalized_cv = normalize_text(cv_text)
 
     if isinstance(data, dict):
@@ -75,9 +76,9 @@ def check_quotes(data, cv_text: str):
     return data
 
 
-
 def enforce_skill_evidence(analysis: dict) -> dict:
-    """Make skill classifications consistent with their evidence flags."""
+    """Validate skill classifications against their quote evidence."""
+
     skills = analysis.get("technical_skills", [])
     validated_skills = []
 
@@ -85,9 +86,28 @@ def enforce_skill_evidence(analysis: dict) -> dict:
         listed = skill.get("listed_in_skills") is True
         demonstrated = skill.get("demonstrated_elsewhere") is True
 
-        # Exclude skills with neither type of evidence.
+        source_quote = skill.get("source_quote")
+        demonstration_quote = skill.get("demonstration_quote")
+
+        # A skill listed in the Skills section needs a source quote.
+        if listed and not (
+            isinstance(source_quote, str) and source_quote.strip()
+        ):
+            listed = False
+
+        # A demonstrated skill needs a supporting description.
+        if demonstrated and not (
+            isinstance(demonstration_quote, str)
+            and demonstration_quote.strip()
+        ):
+            demonstrated = False
+
+        # Exclude skills without valid evidence flags.
         if not listed and not demonstrated:
             continue
+
+        skill["listed_in_skills"] = listed
+        skill["demonstrated_elsewhere"] = demonstrated
 
         if listed and demonstrated:
             skill["evidence_type"] = "both"
@@ -99,11 +119,12 @@ def enforce_skill_evidence(analysis: dict) -> dict:
         validated_skills.append(skill)
 
     analysis["technical_skills"] = validated_skills
+
     return analysis
 
 def analyse_profile(cv_text: str) -> dict:
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-5-mini",
         messages=[
             {
                 "role": "system",
@@ -215,6 +236,28 @@ The two booleans and evidence_type must always agree.
   a skill as demonstrated.
 - Do not classify a skill as demonstrated based only on
   assumptions about what a project would normally require.
+
+- Before marking a skill as demonstrated, verify that the
+  demonstration_quote contains evidence specifically
+  supporting that skill.
+
+- A quote mentioning general software development,
+  APIs, databases, containers, or distributed systems
+  does not automatically demonstrate every technology
+  associated with those concepts.
+
+- For example, mentioning containerized microservices
+  does not independently demonstrate Kubernetes.
+
+- The demonstration_quote must provide enough context
+  to establish how the particular skill was used.
+
+- If the CV mentions a technology without describing
+  its use, do not mark it as demonstrated.
+
+- Never create a demonstration_quote by combining
+  separate statements or borrowing evidence from
+  another project or employment role.
 
 5. PROFESSIONAL EXPERIENCE
 - Extract each employment and academic research role
@@ -338,8 +381,7 @@ The two booleans and evidence_type must always agree.
                 ),
             },
         ],
-        response_format={"type": "json_object"},
-        temperature=0,
+        response_format={"type": "json_object"}
     )
 
     content = response.choices[0].message.content

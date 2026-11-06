@@ -12,6 +12,10 @@ from app.models.document import Document
 from app.models.application import Application
 from app.services.document_service import extract_text
 
+from app.models.candidate_profile import CandidateProfile
+from app.schemas.candidate_profile import CandidateProfileResponse
+from sqlalchemy.exc import SQLAlchemyError
+
 router = APIRouter(
     prefix="/documents",
     tags=["Documents"],
@@ -127,34 +131,69 @@ def analyse_saved_profile(
     document_id: int,
     db: Session = Depends(get_db),
 ):
-    document = db.get(Document, document_id)
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
 
-    if document is None:
+    if not document:
         raise HTTPException(
             status_code=404,
-            detail="Document not found.",
+            detail="Document not found",
         )
 
     if document.document_type != "cv":
         raise HTTPException(
             status_code=400,
-            detail="Profile analysis requires a CV document.",
+            detail="Only CV documents can be analysed",
         )
 
+    if not document.extracted_text:
+        raise HTTPException(
+            status_code=400,
+            detail="No extracted text available for this document",
+        )
+
+    # Step 1: Analyse the CV
     try:
         analysis = analyse_profile(document.extracted_text)
-    except Exception as exc:
+
+    except Exception:
         raise HTTPException(
             status_code=502,
-            detail="Profile analysis failed. Check the AI configuration and try again.",
-        ) from exc
+            detail="Profile analysis failed",
+        )
 
+    # Step 2: Save the analysis
+    profile = CandidateProfile(
+        document_id=document.id,
+        analysis=analysis,
+        profile_version="profile-v1",
+        prompt_version="profile-analyst-v1",
+    )
+
+    try:
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+
+    except SQLAlchemyError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Could not save candidate profile",
+        )
+
+    # Step 3: Return the saved profile
     return {
-        "document_id": document.id,
+        "id": profile.id,
+        "document_id": profile.document_id,
         "filename": document.filename,
-        "analysis": analysis,
+        "profile_version": profile.profile_version,
+        "prompt_version": profile.prompt_version,
+        "analysis": profile.analysis,
+        "created_at": profile.created_at,
     }
-
 
 @router.get("/{document_id}/text")
 def get_document_text(
@@ -211,3 +250,33 @@ def re_extract_document(
         "character_count": len(text),
         "message": "Document text re-extracted successfully.",
     }
+
+@router.get(
+    "/{document_id}/profiles",
+    response_model=list[CandidateProfileResponse],
+)
+def get_document_profiles(
+    document_id: int,
+    db: Session = Depends(get_db),
+):
+    document = db.query(Document).filter(
+        Document.id == document_id
+    ).first()
+
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found",
+        )
+
+    profiles = (
+        db.query(CandidateProfile)
+        .filter(CandidateProfile.document_id == document_id)
+        .order_by(
+            CandidateProfile.created_at.desc(),
+            CandidateProfile.id.desc(),
+        )
+        .all()
+    )
+
+    return profiles
